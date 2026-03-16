@@ -1,6 +1,6 @@
 [project]
 name = "venturalitica-scenario-huderia-cobra-public-sector"
-version = "0.1.0"
+version = "0.5.0"
 description = "HUDERIA COBRA fundamental rights impact assessment on public sector AI systems (ACSPublicCoverage demo)"
 readme = "README.md"
 requires-python = ">=3.11"
