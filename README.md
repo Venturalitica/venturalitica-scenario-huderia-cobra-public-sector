@@ -8,10 +8,10 @@ A 5-minute demo of the Venturalitica SDK's native **HUDERIA COBRA** support, imp
 
 **HUDERIA** (Human Rights, Democracy and Rule of Law Impact Assessment) is a non-binding Council of Europe methodology published in February 2026 for evaluating AI systems' impact on fundamental rights. It complements the EU AI Act and GDPR with a human rights lens.
 
-This scenario implements HUDERIA's **COBRA** (Context-Based Risk Analysis) methodology with two CI/CD gates:
+This scenario demonstrates how to operationalize **HUDERIA's COBRA** (Context-Based Risk Analysis) methodology using automated compliance gates. HUDERIA prescribes *what* to evaluate; Venturalitica implements *how* to measure it operationally:
 
-- **Gate G2** (Design & Development): Post-training evaluation of fairness, privacy, and data quality
-- **Gate G3** (Pre-Release): Stricter pre-deployment controls in model registries (SageMaker, MLflow)
+- **Development Gate** (HUDERIA Resource B): Post-training evaluation of fairness, privacy, and data quality
+- **Deployment Gate** (HUDERIA Resource C): Stricter pre-deployment controls before model release to production
 
 ## Scenario: Public Sector Coverage Prediction
 
@@ -82,7 +82,9 @@ cat .venturalitica/trace_*.json
 
 ## HUDERIA Controls Implemented
 
-### Gate G2: Design & Development (Resource B)
+**Note**: HUDERIA defines what to evaluate (Resources A, B, C); Venturalitica operationalizes this through automated gates. The development gate below implements HUDERIA Resource B controls.
+
+### Development Gate: Design & Development Controls (HUDERIA Resource B)
 
 | Control | Metric | Threshold | Purpose |
 |---------|--------|-----------|---------|
@@ -99,7 +101,7 @@ cat .venturalitica/trace_*.json
 | **B.6.3** Predictive Parity | `predictive_parity` | ≥ 0.85 | Precision parity |
 | **B.6.5** Model Performance | `f1_score` | ≥ 0.70 | Minimum effectiveness |
 
-### Gate G3: Pre-Release / Deployment (Resource C)
+### Deployment Gate: Pre-Release / Deployment Controls (HUDERIA Resource C)
 
 | Control | Metric | Threshold | Purpose |
 |---------|--------|-----------|---------|
@@ -114,8 +116,8 @@ cat .venturalitica/trace_*.json
 
 Two OSCAL YAML policies are pre-configured with sector-specific thresholds:
 
-- **`policies/huderia-cobra-design.oscal.yaml`** — Gate G2 (post-training)
-- **`policies/huderia-cobra-prerelease.oscal.yaml`** — Gate G3 (pre-release/deployment)
+- **`policies/huderia-cobra-design.oscal.yaml`** — Development gate (HUDERIA Resource B: post-training evaluation)
+- **`policies/huderia-cobra-prerelease.oscal.yaml`** — Deployment gate (HUDERIA Resource C: pre-deployment evaluation)
 
 Both policies include detailed comments explaining threshold selection for public sector context (GDPR, Equal Treatment Directive).
 
@@ -147,10 +149,10 @@ This scenario demonstrates compliance with:
 
 ## CI/CD Integration
 
-To use HUDERIA gates in a production pipeline:
+To integrate HUDERIA compliance gates into a production pipeline:
 
 ```bash
-# Block model promotion if G2 fails
+# Block model promotion if development gate fails
 VENTURALITICA_STRICT=true uv run python main.py
 
 # Or run gates independently:

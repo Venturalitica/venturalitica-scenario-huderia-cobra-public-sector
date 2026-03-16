@@ -3,10 +3,14 @@
 HUDERIA Fundamental Rights Impact Assessment Demo
 Public Sector Coverage Prediction using ACSPublicCoverage Dataset
 
-This script demonstrates the Venturalitica SDK's HUDERIA support for evaluating
+This script demonstrates the Venturalitica SDK's operationalization of HUDERIA for evaluating
 AI system impact on fundamental rights (privacy, non-discrimination) in public sector
-deployments. The assessment follows the Council of Europe HUDERIA COBRA methodology
-with two gates: G2 (design/dev) and G3 (pre-release/deployment).
+deployments. The assessment implements the Council of Europe HUDERIA COBRA methodology
+with automated gates: development gate (HUDERIA Resource B) and deployment gate (HUDERIA Resource C).
+
+NOTE: HUDERIA prescribes what to evaluate; Venturalitica operationalizes this through
+automated gates for CI/CD integration. The gates are Venturalitica's implementation approach,
+not part of the official HUDERIA framework itself.
 
 Usage:
     uv run python main.py
@@ -14,7 +18,7 @@ Usage:
 Outputs:
     .venturalitica/
         trace_<session>.json        # Execution trace with metrics
-        results.json                # HUDERIA gate results (PASS/FAIL per control)
+        results.json                # Assessment results (PASS/FAIL per control)
         Annex_IV.md                 # Technical documentation
 """
 
@@ -72,17 +76,21 @@ def train_model(X_train, y_train):
     return model
 
 
-def gate_g2_design_eval(df, labels, model, X_test):
+def development_gate_resource_b_eval(df, labels, model, X_test):
     """
-    Gate G2: Post-Training Evaluation (Design & Development)
+    Development Gate: HUDERIA Resource B Evaluation (Post-Training Assessment)
 
-    Evaluates:
+    This gate operationalizes HUDERIA's Resource B assessment, evaluating:
     - Data quality (completeness, class balance, privacy)
     - Model fairness across protected attributes (race, gender)
     - Model performance metrics
+
+    NOTE: HUDERIA defines what to evaluate; Venturalitica operationalizes this
+    through automated gates for CI/CD integration. This gate is NOT part of HUDERIA
+    itself, but implements HUDERIA Resource B controls.
     """
     logger.info("\n" + "="*60)
-    logger.info("GATE G2: Post-Training Evaluation (Design & Development)")
+    logger.info("DEVELOPMENT GATE: Post-Training Evaluation (HUDERIA Resource B)")
     logger.info("="*60)
 
     # Generate predictions for fairness evaluation
@@ -94,8 +102,8 @@ def gate_g2_design_eval(df, labels, model, X_test):
     eval_df['target'] = y_test.values
     eval_df['prediction'] = y_pred
 
-    # Enforce HUDERIA COBRA B controls (design phase)
-    logger.info("Enforcing HUDERIA COBRA Resource B controls...")
+    # Evaluate model against HUDERIA COBRA Resource B controls
+    logger.info("Evaluating against HUDERIA COBRA Resource B controls...")
 
     g2_results = vl.enforce(
         data=eval_df,
@@ -106,23 +114,27 @@ def gate_g2_design_eval(df, labels, model, X_test):
         strict=False  # Warnings, not exceptions (for demo)
     )
 
-    logger.info(f"G2 Results: {str(g2_results)}")
+    logger.info(f"Development Gate Results: {str(g2_results)}")
     return g2_results, eval_df
 
 
-def gate_g3_prerelease_eval(eval_df):
+def deployment_gate_resource_c_eval(eval_df):
     """
-    Gate G3: Pre-Release Evaluation (Deployment Readiness)
+    Deployment Gate: HUDERIA Resource C Evaluation (Pre-Release/Deployment Readiness)
 
-    Enforces stricter privacy and fairness controls before model promotion
-    in production model registries (SageMaker, MLflow).
+    This gate operationalizes HUDERIA's Resource C assessment, enforcing stricter
+    privacy and fairness controls before model promotion to production registries
+    (SageMaker, MLflow).
+
+    NOTE: Like the development gate, this is Venturalitica's operational approach
+    to implementing HUDERIA Resource C controls, not part of HUDERIA itself.
     """
     logger.info("\n" + "="*60)
-    logger.info("GATE G3: Pre-Release Evaluation (Deployment Readiness)")
+    logger.info("DEPLOYMENT GATE: Pre-Release Evaluation (HUDERIA Resource C)")
     logger.info("="*60)
 
-    # Enforce HUDERIA COBRA C controls (prerelease/deployment)
-    logger.info("Enforcing HUDERIA COBRA Resource C controls...")
+    # Evaluate model against HUDERIA COBRA Resource C controls (stricter pre-deployment requirements)
+    logger.info("Evaluating against HUDERIA COBRA Resource C controls...")
 
     g3_results = vl.enforce(
         data=eval_df,
@@ -133,7 +145,7 @@ def gate_g3_prerelease_eval(eval_df):
         strict=False
     )
 
-    logger.info(f"G3 Results: {str(g3_results)}")
+    logger.info(f"Deployment Gate Results: {str(g3_results)}")
     return g3_results
 
 
@@ -154,11 +166,11 @@ def main():
     # Step 3: Train model
     model = train_model(X_train, y_train)
 
-    # Step 4: Gate G2 (Design & Development)
-    g2_results, eval_df = gate_g2_design_eval(df, labels, model, X_test)
+    # Step 4: Development Gate (HUDERIA Resource B)
+    g2_results, eval_df = development_gate_resource_b_eval(df, labels, model, X_test)
 
-    # Step 5: Gate G3 (Pre-Release / Deployment)
-    g3_results = gate_g3_prerelease_eval(eval_df)
+    # Step 5: Deployment Gate (HUDERIA Resource C)
+    g3_results = deployment_gate_resource_c_eval(eval_df)
 
     # Summary
     logger.info("\n" + "="*60)
@@ -171,8 +183,8 @@ def main():
     g3_passed = sum(1 for r in g3_results if r.passed)
     g3_total = len(g3_results)
 
-    logger.info(f"G2 (Design): {g2_passed}/{g2_total} controls passed")
-    logger.info(f"G3 (Deployment): {g3_passed}/{g3_total} controls passed")
+    logger.info(f"Development Gate (HUDERIA Resource B): {g2_passed}/{g2_total} controls passed")
+    logger.info(f"Deployment Gate (HUDERIA Resource C): {g3_passed}/{g3_total} controls passed")
     logger.info(f"Evidence vault: .venturalitica/")
     logger.info("="*60)
 
