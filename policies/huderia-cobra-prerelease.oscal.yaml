@@ -1,0 +1,153 @@
+# HUDERIA COBRA Resource C — Deployment (Pre-Release Evaluation)
+# Scenario: Public Sector Coverage Prediction (ACSPublicCoverage)
+# Context: Pre-promotion gate in model registry (SageMaker, MLflow) before deployment to production
+#
+# Gate: G3 (Pre-Promotion, Model Registry Approval)
+# Enforcement: VENTURALITICA_STRICT=true blocks model promotion if any control fails
+#
+# Thresholds configured for strict deployment context:
+# - Privacy: l-diversity ≥ 5, t-closeness < 0.15 (stronger than design phase)
+# - Data minimization: ≥ 0.60 (only 40% sensitive data)
+# - Fairness: All discrimination metrics at highest standards
+
+assessment-plan:
+  metadata:
+    title: "HUDERIA COBRA Resource C — Public Sector Coverage (Deployment Gate)"
+    version: "1.0"
+    description: "AI model deployment readiness assessment per Council of Europe HUDERIA"
+    props:
+      - name: scenario
+        value: ACSPublicCoverage
+      - name: gate
+        value: "G3 (Pre-Promotion)"
+      - name: jurisdiction
+        value: EU
+
+  control-implementations:
+    - description: "HUDERIA COBRA Resource C Risk Factors — Deployment Context"
+      implemented-requirements:
+
+        # C.1.1 Privacy: L-Diversity
+        - control-id: C.1.1-privacy-l-diversity
+          description: "L-diversity on evaluation data (HUDERIA C.1.1: Identity privacy)"
+          props:
+            - name: metric_key
+              value: l_diversity
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "5"  # Each QI group has ≥5 distinct values for protected attr
+            - name: severity
+              value: high
+            - name: "input:quasi_identifiers"
+              value: "age,RAC1P,SEX"
+            - name: "input:sensitive_attribute"
+              value: "PUBCOV"  # Public coverage is the sensitive outcome
+            - name: note
+              value: "Ensures outcome diversity within demographic groups"
+
+        # C.1.1 Privacy: T-Closeness (stronger guarantee)
+        - control-id: C.1.1-privacy-t-closeness
+          description: "T-closeness on eval data (HUDERIA C.1.1 alternative, stronger)"
+          props:
+            - name: metric_key
+              value: t_closeness
+            - name: operator
+              value: "<"
+            - name: threshold
+              value: "0.15"  # Max 15% distribution divergence
+            - name: severity
+              value: high
+            - name: "input:quasi_identifiers"
+              value: "age,RAC1P"
+            - name: "input:sensitive_attribute"
+              value: "PUBCOV"
+            - name: note
+              value: "Distribution of public coverage outcome must remain close to population baseline"
+
+        # C.1.2 Data Minimization
+        - control-id: C.1.2-data-minimization
+          description: "Data minimization ratio (HUDERIA C.1.2: Minimize personal data)"
+          props:
+            - name: metric_key
+              value: data_minimization
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.60"  # ≤40% sensitive features
+            - name: severity
+              value: medium
+            - name: "input:sensitive_columns"
+              value: "RAC1P,SEX,age,NATIVITY"
+            - name: note
+              value: "Only use necessary sensitive attributes; aggregate or drop unnecessary PII"
+
+        # C.2.1 Non-Discrimination: Equalized Odds
+        - control-id: C.2.1-nondiscrimination-equalized-odds
+          description: "Equalized odds ratio (HUDERIA C.2.1: Non-discrimination)"
+          props:
+            - name: metric_key
+              value: equalized_odds_ratio
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.95"  # Strict 95% rule for deployment
+            - name: severity
+              value: high
+            - name: "input:dimension"
+              value: "RAC1P"
+            - name: note
+              value: "Both TPR and FPR must be equalized across racial groups"
+
+        # C.2.1 Non-Discrimination: Disparate Impact
+        - control-id: C.2.1-nondiscrimination-disparate-impact
+          description: "Disparate impact ratio (HUDERIA C.2.1 alternative)"
+          props:
+            - name: metric_key
+              value: disparate_impact
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.95"  # Strict 95% rule
+            - name: severity
+              value: high
+            - name: "input:protected_attributes"
+              value: "RAC1P"
+            - name: note
+              value: "Favorable outcome rate ratio: min_group / max_group ≥ threshold"
+
+        # C.2.1 Non-Discrimination: Counterfactual Fairness
+        - control-id: C.2.1-nondiscrimination-counterfactual
+          description: "Counterfactual fairness (HUDERIA C.2.1 alternative)"
+          props:
+            - name: metric_key
+              value: counterfactual_fairness
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.90"
+            - name: severity
+              value: medium
+            - name: "input:protected_attribute"
+              value: "RAC1P"
+            - name: note
+              value: "Predictions must be causal-independent of race (do they change if race were different?)"
+
+# CONTEXT NOTES
+# - Gate G3 is triggered automatically when model is promoted to prod in SageMaker/MLflow
+# - Failure of ANY high-severity control blocks promotion
+# - Thresholds are stricter than design phase (G2) due to proximity to deployment
+# - Privacy requirements escalated: l-diversity ≥5 (was k≥20 design), t-closeness < 0.15 (new)
+# - Fairness requirements escalated: 95% rule (was 90% design), counterfactual ≥0.90 (was 0.80)
+#
+# APPROVAL WORKFLOW
+# 1. CI/CD: Run VENTURALITICA_STRICT=true enforce() against test data
+# 2. Dashboard: Model Registry shows HUDERIA G3 status (green/yellow/red)
+# 3. Approval: Human review confirms mitigations before production deployment
+#
+# REGULATORY ALIGNMENT
+# - EU AI Act Art 6: High-risk classification confirmed
+# - EU AI Act Art 9: Risk management (HUDERIA B gate already passed)
+# - EU AI Act Art 15: Accuracy/fairness/security (C gate ensures parity)
+# - GDPR Art 22: Automated decision-making safeguards (counterfactual fairness)
+# - Equal Treatment Directive: Non-discrimination on grounds of race

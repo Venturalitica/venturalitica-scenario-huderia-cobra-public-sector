@@ -1,0 +1,4 @@
+venturalitica>=0.5.3
+folktables>=0.0.12
+pandas>=2.0
+scikit-learn>=1.3

@@ -1,0 +1,198 @@
+# HUDERIA COBRA Resource B — Design & Development Context
+# Scenario: Public Sector Coverage Prediction (ACSPublicCoverage)
+# Context: Predicting public health insurance coverage (binary target) using demographic data
+# Jurisdiction: EU public sector (GDPR + Equal Treatment Directive)
+#
+# Gate: G2 (Post-Training, Pre-Release)
+# Enforcement: VENTURALITICA_STRICT=true in CI/CD pipeline
+#
+# Thresholds configured for sector públi
+co context:
+# - Privacy: k≥20 (GDPR, quasi-identifiers: age, race, gender)
+# - Fairness: demographic_parity_diff < 0.05 (strict: equal opportunity mandate)
+# - Data quality: completeness ≥ 0.95 (public datasets require high integrity)
+
+assessment-plan:
+  metadata:
+    title: "HUDERIA COBRA Resource B — Public Sector Coverage (Design & Development)"
+    version: "1.0"
+    description: "AI model development gate for public sector fundamental rights assessment"
+    props:
+      - name: scenario
+        value: ACSPublicCoverage
+      - name: jurisdiction
+        value: EU
+
+  control-implementations:
+    - description: "HUDERIA COBRA Resource B Risk Factors — Public Sector Context"
+      implemented-requirements:
+
+        # B.5.1 Data Quality: Completeness
+        - control-id: B.5.1-data-quality-completeness
+          description: "Data completeness (HUDERIA B.5.1: Data quality)"
+          props:
+            - name: metric_key
+              value: data_completeness
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.95"  # Public datasets must be highly complete
+            - name: severity
+              value: high
+
+        # B.5.1 Class Balance: Training Set Representativeness
+        - control-id: B.5.1-class-balance
+          description: "Class imbalance in training data (HUDERIA B.5.1)"
+          props:
+            - name: metric_key
+              value: class_imbalance
+            - name: operator
+              value: "<"
+            - name: threshold
+              value: "0.7"  # Acceptable imbalance ratio
+            - name: severity
+              value: medium
+
+        # B.5.2 Privacy: K-Anonymity on Training Data
+        - control-id: B.5.2-privacy-k-anonymity
+          description: "K-anonymity protection on quasi-identifiers (HUDERIA B.5.2)"
+          props:
+            - name: metric_key
+              value: k_anonymity
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "20"  # EU public sector standard (GDPR)
+            - name: severity
+              value: high
+            - name: "input:quasi_identifiers"
+              value: "age,RAC1P,SEX"  # IPUMS race code, gender
+
+        # B.5.3 Data Integrity: Provenance Trail
+        - control-id: B.5.3-data-integrity-provenance
+          description: "Data provenance completeness (HUDERIA B.5.3)"
+          props:
+            - name: metric_key
+              value: provenance_completeness
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.90"
+            - name: severity
+              value: medium
+
+        # B.6.1 Bias: Causal Fairness
+        - control-id: B.6.1-bias-causal-fairness
+          description: "Causal fairness diagnostic (HUDERIA B.6.1)"
+          props:
+            - name: metric_key
+              value: causal_fairness_diagnostic
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.75"  # Acceptable causal independence
+            - name: severity
+              value: high
+            - name: "input:protected_attributes"
+              value: "RAC1P,SEX"
+
+        # B.6.1 Bias: Disparate Impact
+        - control-id: B.6.1-bias-disparate-impact
+          description: "Disparate impact ratio (HUDERIA B.6.1 alternative)"
+          props:
+            - name: metric_key
+              value: disparate_impact
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.90"  # 90% rule for public sector
+            - name: severity
+              value: high
+            - name: "input:protected_attributes"
+              value: "RAC1P"
+
+        # B.6.1 Bias: Counterfactual Fairness
+        - control-id: B.6.1-bias-counterfactual
+          description: "Counterfactual fairness (HUDERIA B.6.1 alternative)"
+          props:
+            - name: metric_key
+              value: counterfactual_fairness
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.80"
+            - name: severity
+              value: medium
+
+        # B.6.3 Model Evaluation: Demographic Parity
+        - control-id: B.6.3-eval-demographic-parity
+          description: "Demographic parity difference (HUDERIA B.6.3)"
+          props:
+            - name: metric_key
+              value: demographic_parity_diff
+            - name: operator
+              value: "<"
+            - name: threshold
+              value: "0.05"  # Strict: public sector equal opportunity
+            - name: severity
+              value: high
+            - name: "input:dimension"
+              value: "RAC1P"
+
+        # B.6.3 Model Evaluation: Equal Opportunity
+        - control-id: B.6.3-eval-equal-opportunity
+          description: "Equal opportunity difference (HUDERIA B.6.3 alternative)"
+          props:
+            - name: metric_key
+              value: equal_opportunity_diff
+            - name: operator
+              value: "<"
+            - name: threshold
+              value: "0.05"
+            - name: severity
+              value: high
+            - name: "input:dimension"
+              value: "SEX"
+
+        # B.6.3 Model Evaluation: Equalized Odds
+        - control-id: B.6.3-eval-equalized-odds
+          description: "Equalized odds ratio (HUDERIA B.6.3 alternative)"
+          props:
+            - name: metric_key
+              value: equalized_odds_ratio
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.90"
+            - name: severity
+              value: high
+
+        # B.6.5 Model Performance: F1-Score
+        - control-id: B.6.5-model-performance-f1
+          description: "Model F1-score minimum (HUDERIA B.6.5)"
+          props:
+            - name: metric_key
+              value: f1_score
+            - name: operator
+              value: ">="
+            - name: threshold
+              value: "0.70"  # Minimum for public sector deployment
+            - name: severity
+              value: high
+
+# CONTEXT NOTES
+# - ACSPublicCoverage: Predict public health insurance coverage (binary classification)
+# - Population: US Census Bureau American Community Survey (2014-2018)
+# - Sensitive attributes: Race (RAC1P: categorical, 1=White, 2=Black, 26=Native American, etc.)
+# - Quasi-identifiers: Age, Race, Gender (can re-identify individuals)
+# - EU AI Act alignment: Art 10 (data quality), Art 15 (fairness), Art 13 (transparency)
+# - GDPR alignment: Art 6 (lawful basis for processing), Art 9 (special categories), Art 22 (automated decision-making)
+# - Equal Treatment Directive: Prohibition of discrimination on grounds of race, nationality, or gender
+#
+# DECLARATIVE CONTROLS (not metrizable, addressed at SaaS level):
+# - B.1.1 Design justification: Document architectural choices
+# - B.2.1 Organizational maturity: Training for data scientists
+# - B.3.1-B.3.2 Replacement risks: Human review of high-impact decisions
+# - B.6.2 Explainability: SHAP or LIME-based model interpretability
+# - B.6.4 Metrics adequacy: Confirm metrics align with regulatory requirements
+# - B.6.7 Repurposing risk: Assess reuse in different contexts
